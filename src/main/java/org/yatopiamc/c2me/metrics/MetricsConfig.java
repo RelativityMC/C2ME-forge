@@ -9,7 +9,7 @@ public class MetricsConfig {
     final String _notice3 = "enabled, but if you're not comfortable with this, you can turn this setting off. There is no";
     final String _notice4 = "performance penalty associated with having metrics enabled, and data sent to bStats is fully";
     final String _notice5 = "anonymous.";
-    final String _notice6 = "C2ME-fabric bStats page: https://bstats.org/plugin/bukkit/C2ME-fabric/10514";
+    final String _notice6 = "C2ME-forge bStats page: https://bstats.org/plugin/bukkit/C2ME-forge/10823";
     String serverUuid;
     boolean enabled;
     boolean logFailedRequests;

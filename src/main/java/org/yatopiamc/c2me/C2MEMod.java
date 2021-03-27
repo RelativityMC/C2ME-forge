@@ -20,7 +20,7 @@ public class C2MEMod {
     }
 
     public void onInitialize() {
-        final Metrics metrics = new Metrics(10514);
+        final Metrics metrics = new Metrics(10823);
         metrics.addCustomChart(new Metrics.SimplePie("environmentType", () -> FMLLoader.getDist().name().toLowerCase(Locale.ENGLISH)));
         metrics.addCustomChart(new Metrics.SimplePie("useThreadedWorldGeneration", () -> String.valueOf(C2MEConfig.threadedWorldGenConfig.enabled)));
         metrics.addCustomChart(new Metrics.SimplePie("useThreadedWorldFeatureGeneration", () -> String.valueOf(C2MEConfig.threadedWorldGenConfig.allowThreadedFeatures)));

@@ -167,13 +167,6 @@ dependencies {
     annotationProcessor 'org.ow2.asm:asm-util:9.0'
 }
 
-// More mixin stuff
-apply plugin: 'org.spongepowered.mixin'
-
-mixin {
-    add sourceSets.main, "c2me.refmap.json"
-}
-
 // Example for how to get properties into the manifest for reading by the runtime..
 jar {
     manifest {
@@ -193,11 +186,21 @@ jar {
 }
 
 shadowJar {
-    archiveClassifier.set("")
     dependencies {
         include(dependency("com.ibm.async:asyncutil:0.1.0"))
     }
     finalizedBy('reobfJar')
+}
+
+afterEvaluate {
+    reobf.maybeCreate("shadowJar").mappings = tasks.getByName("createMcpToSrg").output
+}
+
+// More mixin stuff
+apply plugin: 'org.spongepowered.mixin'
+
+mixin {
+    add sourceSets.main, "c2me.refmap.json"
 }
 
 publishing {
