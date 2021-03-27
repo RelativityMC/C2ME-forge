@@ -2,33 +2,36 @@ package org.yatopiamc.c2me.metrics;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.MinecraftVersion;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.MinecraftVersion;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.yatopiamc.c2me.common.util.ConfigDirUtil;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,10 +40,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
-import javax.net.ssl.HttpsURLConnection;
 
 public class Metrics {
 
@@ -58,7 +59,7 @@ public class Metrics {
      */
     public Metrics(int serviceId) {
         // Get the config file
-        final Path configFile = FabricLoader.getInstance().getConfigDir().resolve("c2me-bstats.json");
+        final Path configFile = ConfigDirUtil.getConfigDir().resolve("c2me-bstats.json");
         final MetricsConfig config = readConfig(configFile);
         // Load the data
         metricsBase =
@@ -76,6 +77,9 @@ public class Metrics {
                         config.logFailedRequests,
                         config.logSentData,
                         config.logResponseStatusText);
+        // register the listener
+        MinecraftForge.EVENT_BUS.addListener((FMLServerAboutToStartEvent event) -> capturedServer.set(event.getServer()));
+        MinecraftForge.EVENT_BUS.addListener((FMLServerStoppedEvent event) -> capturedServer.compareAndSet(event.getServer(), null));
     }
 
     private MetricsConfig readConfig(Path configFile) {
@@ -114,12 +118,12 @@ public class Metrics {
 
     private void appendPlatformData(JsonObjectBuilder builder) {
         builder.appendField("playerAmount", getPlayerAmount());
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            builder.appendField("onlineMode", MinecraftClient.getInstance().getSession().getAccessToken() != null ? 1 : 0);
-        } else if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
+        if (FMLLoader.getDist() == Dist.CLIENT) {
+            builder.appendField("onlineMode", Minecraft.getInstance().getUser().getAccessToken() != null ? 1 : 0);
+        } else if (FMLLoader.getDist() == Dist.DEDICATED_SERVER) {
             final MinecraftServer minecraftServer = capturedServer.get();
             if (minecraftServer != null) {
-                builder.appendField("onlineMode", minecraftServer.isOnlineMode() ? 1 : 0);
+                builder.appendField("onlineMode", minecraftServer.usesAuthentication() ? 1 : 0);
             } else {
                 LOGGER.warn("No captured server found for dedicated server environment, assuming offline mode");
                 builder.appendField("onlineMode", 0);
@@ -128,7 +132,7 @@ public class Metrics {
             LOGGER.warn("Unknown environment, assuming offline mode");
             builder.appendField("onlineMode", 0);
         }
-        builder.appendField("bukkitVersion", FabricLoader.getInstance().getModContainer("fabricloader").get().getMetadata().getVersion().getFriendlyString() + " (MC: " + MinecraftVersion.field_25319.getReleaseTarget() + ")");
+        builder.appendField("bukkitVersion", FMLLoader.getLauncherInfo() + " (MC: " + MinecraftVersion.BUILT_IN.getReleaseTarget() + ")");
         builder.appendField("bukkitName", "fabric");
         builder.appendField("javaVersion", System.getProperty("java.version"));
         builder.appendField("osName", System.getProperty("os.name"));
@@ -138,13 +142,13 @@ public class Metrics {
     }
 
     private void appendServiceData(JsonObjectBuilder builder) {
-        builder.appendField("pluginVersion", FabricLoader.getInstance().getModContainer("c2me").get().getMetadata().getVersion().getFriendlyString());
+        builder.appendField("pluginVersion", Metrics.class.getPackage().getImplementationVersion());
     }
 
     private int getPlayerAmount() {
         final MinecraftServer minecraftServer = capturedServer.get();
         if (minecraftServer != null && minecraftServer.isRunning()) {
-            return minecraftServer.getCurrentPlayerCount();
+            return minecraftServer.getPlayerCount();
         } else {
             return 0;
         }

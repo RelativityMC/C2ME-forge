@@ -1,13 +1,13 @@
 package org.yatopiamc.c2me.mixin.threading.worldgen;
 
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.server.world.ThreadedAnvilChunkStorage;
+import net.minecraft.world.server.ChunkHolder;
+import net.minecraft.world.server.ChunkManager;
 import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.yatopiamc.c2me.common.threading.GlobalExecutors;
 
-@Mixin(ThreadedAnvilChunkStorage.class)
+@Mixin(ChunkManager.class)
 public class MixinThreadedAnvilChunkStorage {
 
     /**
@@ -17,7 +17,7 @@ public class MixinThreadedAnvilChunkStorage {
     @SuppressWarnings("OverwriteTarget")
     @Dynamic
     @Overwrite
-    private void method_17259(ChunkHolder chunkHolder, Runnable runnable) { // synthetic method for worldGenExecutor scheduling
+    private void lambda$scheduleChunkGeneration$21(ChunkHolder chunkHolder, Runnable runnable) { // synthetic method for worldGenExecutor scheduling
         GlobalExecutors.scheduler.execute(runnable);
     }
 

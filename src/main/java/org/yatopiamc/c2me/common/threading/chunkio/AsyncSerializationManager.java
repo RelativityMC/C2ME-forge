@@ -2,26 +2,27 @@ package org.yatopiamc.c2me.common.threading.chunkio;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.block.Block;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.fluid.Fluid;
-import net.minecraft.server.world.ServerTickScheduler;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.server.world.SimpleTickScheduler;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.util.math.SectionPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.ITickList;
 import net.minecraft.world.LightType;
-import net.minecraft.world.TickScheduler;
+import net.minecraft.world.SerializableTickList;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkNibbleArray;
-import net.minecraft.world.chunk.light.ChunkLightingView;
-import net.minecraft.world.chunk.light.LightingProvider;
+import net.minecraft.world.chunk.IChunk;
+import net.minecraft.world.chunk.NibbleArray;
+import net.minecraft.world.lighting.IWorldLightListener;
+import net.minecraft.world.lighting.WorldLightManager;
+import net.minecraft.world.server.ServerTickList;
+import net.minecraft.world.server.ServerWorld;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.yatopiamc.c2me.common.util.DeepCloneable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Map;
@@ -58,48 +59,48 @@ public class AsyncSerializationManager {
 
     public static class Scope {
         public final ChunkPos pos;
-        public final Map<LightType, ChunkLightingView> lighting;
-        public final TickScheduler<Block> blockTickScheduler;
-        public final TickScheduler<Fluid> fluidTickScheduler;
-        public final Map<BlockPos, BlockEntity> blockEntities;
+        public final Map<LightType, IWorldLightListener> lighting;
+        public final ITickList<Block> blockTickScheduler;
+        public final ITickList<Fluid> fluidTickScheduler;
+        public final Map<BlockPos, TileEntity> blockEntities;
         private final AtomicBoolean isOpen = new AtomicBoolean(false);
 
-        public Scope(Chunk chunk, ServerWorld world) {
+        public Scope(IChunk chunk, ServerWorld world) {
             this.pos = chunk.getPos();
-            this.lighting = Arrays.stream(LightType.values()).map(type -> new CachedLightingView(world.getLightingProvider(), chunk.getPos(), type)).collect(Collectors.toMap(CachedLightingView::getLightType, Function.identity()));
-            final TickScheduler<Block> blockTickScheduler = chunk.getBlockTickScheduler();
+            this.lighting = Arrays.stream(LightType.values()).map(type -> new CachedLightingView(world.getLightEngine(), chunk.getPos(), type)).collect(Collectors.toMap(CachedLightingView::getLightType, Function.identity()));
+            final ITickList<Block> blockTickScheduler = chunk.getBlockTicks();
             if (blockTickScheduler instanceof DeepCloneable) {
-                this.blockTickScheduler = (TickScheduler<Block>) ((DeepCloneable) blockTickScheduler).deepClone();
+                this.blockTickScheduler = (ITickList<Block>) ((DeepCloneable) blockTickScheduler).deepClone();
             } else {
-                final ServerTickScheduler<Block> worldBlockTickScheduler = world.getBlockTickScheduler();
-                this.blockTickScheduler = new SimpleTickScheduler<>(Registry.BLOCK::getId, worldBlockTickScheduler.getScheduledTicksInChunk(chunk.getPos(), false, true), world.getTime());
+                final ServerTickList<Block> worldBlockTickScheduler = world.getBlockTicks();
+                this.blockTickScheduler = new SerializableTickList<>(Registry.BLOCK::getKey, worldBlockTickScheduler.fetchTicksInChunk(chunk.getPos(), false, true), world.getGameTime());
             }
-            final TickScheduler<Fluid> fluidTickScheduler = chunk.getFluidTickScheduler();
+            final ITickList<Fluid> fluidTickScheduler = chunk.getLiquidTicks();
             if (fluidTickScheduler instanceof DeepCloneable) {
-                this.fluidTickScheduler = (TickScheduler<Fluid>) ((DeepCloneable) fluidTickScheduler).deepClone();
+                this.fluidTickScheduler = (ITickList<Fluid>) ((DeepCloneable) fluidTickScheduler).deepClone();
             } else {
-                final ServerTickScheduler<Fluid> worldFluidTickScheduler = world.getFluidTickScheduler();
-                this.fluidTickScheduler = new SimpleTickScheduler<>(Registry.FLUID::getId, worldFluidTickScheduler.getScheduledTicksInChunk(chunk.getPos(), false, true), world.getTime());
+                final ServerTickList<Fluid> worldFluidTickScheduler = world.getLiquidTicks();
+                this.fluidTickScheduler = new SerializableTickList<>(Registry.FLUID::getKey, worldFluidTickScheduler.fetchTicksInChunk(chunk.getPos(), false, true), world.getGameTime());
             }
-            this.blockEntities = chunk.getBlockEntityPositions().stream().map(chunk::getBlockEntity).filter(Objects::nonNull).filter(blockEntity -> !blockEntity.isRemoved()).collect(Collectors.toMap(BlockEntity::getPos, Function.identity()));
+            this.blockEntities = chunk.getBlockEntitiesPos().stream().map(chunk::getBlockEntity).filter(Objects::nonNull).filter(blockEntity -> !blockEntity.isRemoved()).collect(Collectors.toMap(TileEntity::getBlockPos, Function.identity()));
         }
 
         public void open() {
             if (!isOpen.compareAndSet(false, true)) throw new IllegalStateException("Cannot use scope twice");
         }
 
-        private static final class CachedLightingView implements ChunkLightingView {
+        private static final class CachedLightingView implements IWorldLightListener {
 
-            private static final ChunkNibbleArray EMPTY = new ChunkNibbleArray();
+            private static final NibbleArray EMPTY = new NibbleArray();
 
             private final LightType lightType;
-            private final Map<ChunkSectionPos, ChunkNibbleArray> cachedData = new Object2ObjectOpenHashMap<>();
+            private final Map<SectionPos, NibbleArray> cachedData = new Object2ObjectOpenHashMap<>();
 
-            CachedLightingView(LightingProvider provider, ChunkPos pos, LightType type) {
+            CachedLightingView(WorldLightManager provider, ChunkPos pos, LightType type) {
                 this.lightType = type;
                 for (int i = -1; i < 17; i++) {
-                    final ChunkSectionPos sectionPos = ChunkSectionPos.from(pos, i);
-                    ChunkNibbleArray lighting = provider.get(type).getLightSection(sectionPos);
+                    final SectionPos sectionPos = SectionPos.of(pos, i);
+                    NibbleArray lighting = provider.getLayerListener(type).getDataLayerData(sectionPos);
                     cachedData.put(sectionPos, lighting != null ? lighting.copy() : null);
                 }
             }
@@ -109,18 +110,18 @@ public class AsyncSerializationManager {
             }
 
             @Override
-            public void setSectionStatus(ChunkSectionPos pos, boolean notReady) {
+            public void updateSectionStatus(@Nonnull SectionPos pos, boolean notReady) {
                 throw new UnsupportedOperationException();
             }
 
-            @NotNull
+            @Nonnull
             @Override
-            public ChunkNibbleArray getLightSection(ChunkSectionPos pos) {
+            public NibbleArray getDataLayerData(SectionPos pos) {
                 return cachedData.getOrDefault(pos, EMPTY);
             }
 
             @Override
-            public int getLightLevel(BlockPos pos) {
+            public int getLightValue(BlockPos pos) {
                 throw new UnsupportedOperationException();
             }
         }

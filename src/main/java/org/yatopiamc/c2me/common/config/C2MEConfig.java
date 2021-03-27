@@ -3,10 +3,9 @@ package org.yatopiamc.c2me.common.config;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.google.common.base.Preconditions;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.yatopiamc.c2me.C2MEMod;
-
-import java.net.URL;
+import org.yatopiamc.c2me.common.util.ConfigDirUtil;
 
 public class C2MEConfig {
 
@@ -15,7 +14,7 @@ public class C2MEConfig {
 
     static {
         long startTime = System.nanoTime();
-        CommentedFileConfig config = CommentedFileConfig.builder(FabricLoader.getInstance().getConfigDir().resolve("c2me.toml"))
+        CommentedFileConfig config = CommentedFileConfig.builder(ConfigDirUtil.getConfigDir().resolve("c2me.toml"))
                 .autosave()
                 .preserveInsertionOrder()
                 .sync()

@@ -9,7 +9,6 @@
     "chunkscheduling.mid_tick_chunk_tasks.MixinServerChunkManager",
     "chunkscheduling.mid_tick_chunk_tasks.MixinServerTickScheduler",
     "chunkscheduling.mid_tick_chunk_tasks.MixinWorld",
-    "metrics.MixinMinecraftServer",
     "threading.chunkio.MixinChunkSerializer",
     "threading.chunkio.MixinChunkTickScheduler",
     "threading.chunkio.MixinScheduledTick",
@@ -20,13 +19,13 @@
     "threading.chunkio.MixinThreadedAnvilChunkStorage",
     "threading.chunkio.MixinVersionedChunkStorage",
     "threading.lighting.MixinServerLightingProvider",
-    "threading.lighting.MixinThreadedAnvilChunkStorage",
     "threading.worldgen.MixinChunkStatus",
     "threading.worldgen.MixinServerWorld",
     "threading.worldgen.MixinStructureManager",
     "threading.worldgen.MixinStructurePalettedBlockInfoList",
     "threading.worldgen.MixinThreadedAnvilChunkStorage",
     "threading.worldgen.MixinWeightedBlockStateProvider",
+    "util.accessor.IThreadTaskExecutor",
     "util.log4j2shutdownhookisnomore.MixinMain",
     "util.log4j2shutdownhookisnomore.MixinMinecraftDedicatedServer",
     "util.progresslogger.MixinWorldGenerationProgressLogger"
@@ -36,5 +35,6 @@
   "plugin": "org.yatopiamc.c2me.mixin.C2MEMixinPlugin",
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "refmap": "c2me.refmap.json"
 }

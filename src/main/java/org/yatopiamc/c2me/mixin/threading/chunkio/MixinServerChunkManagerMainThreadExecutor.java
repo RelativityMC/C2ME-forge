@@ -1,22 +1,22 @@
 package org.yatopiamc.c2me.mixin.threading.chunkio;
 
-import net.minecraft.server.world.ServerChunkManager;
-import net.minecraft.util.thread.ThreadExecutor;
+import net.minecraft.util.concurrent.ThreadTaskExecutor;
+import net.minecraft.world.server.ServerChunkProvider;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ServerChunkManager.MainThreadExecutor.class)
-public abstract class MixinServerChunkManagerMainThreadExecutor extends ThreadExecutor<Runnable> {
+@Mixin(ServerChunkProvider.ChunkExecutor.class)
+public abstract class MixinServerChunkManagerMainThreadExecutor extends ThreadTaskExecutor<Runnable> {
 
     protected MixinServerChunkManagerMainThreadExecutor(String name) {
         super(name);
     }
 
-    @Inject(method = "runTask", at = @At("RETURN"))
+    @Inject(method = "pollTask", at = @At("RETURN"))
     private void onPostRunTask(CallbackInfoReturnable<Boolean> cir) {
-        super.runTask();
+        super.pollTask();
     }
 
 }

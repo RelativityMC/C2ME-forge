@@ -1,13 +1,14 @@
 package org.yatopiamc.c2me.mixin.threading.worldgen;
 
 import com.mojang.datafixers.util.Either;
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.server.world.ServerLightingProvider;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructureManager;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.chunk.IChunk;
+import net.minecraft.world.gen.ChunkGenerator;
+import net.minecraft.world.gen.feature.template.TemplateManager;
+import net.minecraft.world.server.ChunkHolder;
+import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.server.ServerWorldLightManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -24,7 +25,7 @@ public class MixinChunkStatus {
 
     @Shadow
     @Final
-    private ChunkStatus.GenerationTask generationTask;
+    private ChunkStatus.IGenerationWorker generationTask;
 
     @Shadow @Final public static ChunkStatus FEATURES;
 
@@ -33,8 +34,8 @@ public class MixinChunkStatus {
      * @reason take over generation
      */
     @Overwrite
-    public CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>> runGenerationTask(ServerWorld world, ChunkGenerator chunkGenerator, StructureManager structureManager, ServerLightingProvider lightingProvider, Function<Chunk, CompletableFuture<Either<Chunk, ChunkHolder.Unloaded>>> function, List<Chunk> chunks) {
-        final Chunk targetChunk = chunks.get(chunks.size() / 2);
+    public CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> generate(ServerWorld world, ChunkGenerator chunkGenerator, TemplateManager structureManager, ServerWorldLightManager lightingProvider, Function<IChunk, CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>>> function, List<IChunk> chunks) {
+        final IChunk targetChunk = chunks.get(chunks.size() / 2);
         //noinspection ConstantConditions
         return ChunkStatusUtils.runChunkGenWithLock(targetChunk.getPos(), (Object) this == FEATURES ? 1 : 0, ((IWorldGenLockable) world).getWorldGenChunkLock(), () ->
                 ChunkStatusUtils.getThreadingType((ChunkStatus) (Object) this).runTask(((IWorldGenLockable) world).getWorldGenSingleThreadedLock(), () ->

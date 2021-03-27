@@ -1,9 +1,9 @@
 package org.yatopiamc.c2me.mixin.util.progresslogger;
 
-import net.minecraft.server.WorldGenerationProgressLogger;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.listener.LoggingChunkStatusListener;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(WorldGenerationProgressLogger.class)
+@Mixin(LoggingChunkStatusListener.class)
 public class MixinWorldGenerationProgressLogger {
 
     @Shadow
@@ -21,7 +21,7 @@ public class MixinWorldGenerationProgressLogger {
     private static Logger LOGGER;
     @Shadow
     @Final
-    private int totalCount;
+    private int maxCount;
     private volatile ChunkPos spawnPos = null;
     private volatile int radius = 0;
     private volatile int chunkStatusTransitions = 0;
@@ -33,19 +33,19 @@ public class MixinWorldGenerationProgressLogger {
         this.radius = radius;
         chunkStatuses = 0;
         chunkStatusTransitions = 0;
-        while ((status = status.getPrevious()) != ChunkStatus.EMPTY)
+        while ((status = status.getParent()) != ChunkStatus.EMPTY)
             chunkStatuses++;
         chunkStatuses++;
     }
 
-    @Inject(method = "start", at = @At("RETURN"))
+    @Inject(method = "updateSpawnPos", at = @At("RETURN"))
     private void onStart(ChunkPos spawnPos, CallbackInfo ci) {
         this.spawnPos = spawnPos;
     }
 
-    @Inject(method = "setChunkStatus", at = @At("HEAD"))
+    @Inject(method = "onStatusChange", at = @At("HEAD"))
     private void onSetChunkStatus(ChunkPos pos, ChunkStatus status, CallbackInfo ci) {
-        if (status != null && (this.spawnPos == null || pos.method_24022(spawnPos) <= radius)) this.chunkStatusTransitions++;
+        if (status != null && (this.spawnPos == null || pos.getChessboardDistance(spawnPos) <= radius)) this.chunkStatusTransitions++;
     }
 
     /**
@@ -53,9 +53,9 @@ public class MixinWorldGenerationProgressLogger {
      * @reason replace impl
      */
     @Overwrite
-    public int getProgressPercentage() {
-        // LOGGER.info("{} / {}", chunkStatusTransitions, totalCount * chunkStatuses);
-        return MathHelper.floor((float) this.chunkStatusTransitions * 100.0F / (float) (this.totalCount * chunkStatuses));
+    public int getProgress() {
+        // LOGGER.info("{} / {}", chunkStatusTransitions, maxCount * chunkStatuses);
+        return MathHelper.floor((float) this.chunkStatusTransitions * 100.0F / (float) (this.maxCount * chunkStatuses));
     }
 
 }

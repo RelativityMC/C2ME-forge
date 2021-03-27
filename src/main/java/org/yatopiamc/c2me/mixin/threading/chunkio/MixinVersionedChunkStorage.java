@@ -2,17 +2,16 @@ package org.yatopiamc.c2me.mixin.threading.chunkio;
 
 import com.ibm.asyncutil.locks.AsyncLock;
 import com.mojang.datafixers.DataFixer;
-import net.minecraft.SharedConstants;
-import net.minecraft.datafixer.DataFixTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.FeatureUpdater;
-import net.minecraft.world.PersistentStateManager;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.NBTUtil;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.SharedConstants;
+import net.minecraft.util.datafix.DefaultTypeReferences;
 import net.minecraft.world.World;
-import net.minecraft.world.storage.StorageIoWorker;
-import net.minecraft.world.storage.VersionedChunkStorage;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.chunk.storage.ChunkLoader;
+import net.minecraft.world.chunk.storage.IOWorker;
+import net.minecraft.world.gen.feature.structure.LegacyStructureDataUtil;
+import net.minecraft.world.storage.DimensionSavedDataManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -23,18 +22,20 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.yatopiamc.c2me.common.threading.chunkio.C2MECachedRegionStorage;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.function.Supplier;
 
-@Mixin(VersionedChunkStorage.class)
+@Mixin(ChunkLoader.class)
 public abstract class MixinVersionedChunkStorage {
 
-    @Shadow @Final protected DataFixer dataFixer;
+    @Shadow @Final protected DataFixer fixerUpper;
 
-    @Shadow @Nullable private FeatureUpdater featureUpdater;
+    @Shadow @Nullable
+    private LegacyStructureDataUtil legacyStructureHandler;
 
-    @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/world/storage/StorageIoWorker"))
-    private StorageIoWorker onStorageIoInit(File file, boolean bl, String string) {
+    @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/world/chunk/storage/IOWorker"))
+    private IOWorker onStorageIoInit(File file, boolean bl, String string) {
         return new C2MECachedRegionStorage(file, bl, string);
     }
 
@@ -50,34 +51,34 @@ public abstract class MixinVersionedChunkStorage {
      * @reason async loading
      */
     @Overwrite
-    public CompoundTag updateChunkTag(RegistryKey<World> registryKey, Supplier<PersistentStateManager> persistentStateManagerFactory, CompoundTag tag) {
+    public CompoundNBT upgradeChunkTag(RegistryKey<World> registryKey, Supplier<DimensionSavedDataManager> persistentStateManagerFactory, CompoundNBT tag) {
         // TODO [VanillaCopy] - check when updating minecraft version
-        int i = VersionedChunkStorage.getDataVersion(tag);
+        int i = ChunkLoader.getVersion(tag);
         if (i < 1493) {
             try (final AsyncLock.LockToken ignored = featureUpdaterLock.acquireLock().toCompletableFuture().join()) { // C2ME - async chunk loading
-                tag = NbtHelper.update(this.dataFixer, DataFixTypes.CHUNK, tag, i, 1493);
+                tag = NBTUtil.update(this.fixerUpper, DefaultTypeReferences.CHUNK, tag, i, 1493);
                 if (tag.getCompound("Level").getBoolean("hasLegacyStructureData")) {
-                    if (this.featureUpdater == null) {
-                        this.featureUpdater = FeatureUpdater.create(registryKey, (PersistentStateManager)persistentStateManagerFactory.get());
+                    if (this.legacyStructureHandler == null) {
+                        this.legacyStructureHandler = LegacyStructureDataUtil.getLegacyStructureHandler(registryKey, persistentStateManagerFactory.get());
                     }
 
-                    tag = this.featureUpdater.getUpdatedReferences(tag);
+                    tag = this.legacyStructureHandler.updateFromLegacy(tag);
                 }
             } // C2ME - async chunk loading
         }
 
-        tag = NbtHelper.update(this.dataFixer, DataFixTypes.CHUNK, tag, Math.max(1493, i));
-        if (i < SharedConstants.getGameVersion().getWorldVersion()) {
-            tag.putInt("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
+        tag = NBTUtil.update(this.fixerUpper, DefaultTypeReferences.CHUNK, tag, Math.max(1493, i));
+        if (i < SharedConstants.getCurrentVersion().getWorldVersion()) {
+            tag.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
         }
 
         return tag;
     }
 
-    @Redirect(method = "setTagAt", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/FeatureUpdater;markResolved(J)V"))
-    private void onSetTagAtFeatureUpdaterMarkResolved(FeatureUpdater featureUpdater, long l) {
+    @Redirect(method = "write", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/feature/structure/LegacyStructureDataUtil;removeIndex(J)V"))
+    private void onSetTagAtFeatureUpdaterMarkResolved(LegacyStructureDataUtil featureUpdater, long l) {
         try (final AsyncLock.LockToken ignored = featureUpdaterLock.acquireLock().toCompletableFuture().join()) {
-            featureUpdater.markResolved(l);
+            featureUpdater.removeIndex(l);
         }
     }
 

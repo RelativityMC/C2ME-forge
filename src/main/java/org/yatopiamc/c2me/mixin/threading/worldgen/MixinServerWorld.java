@@ -2,8 +2,8 @@ package org.yatopiamc.c2me.mixin.threading.worldgen;
 
 import com.ibm.asyncutil.locks.AsyncLock;
 import com.ibm.asyncutil.locks.AsyncNamedLock;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.server.ServerWorld;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

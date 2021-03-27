@@ -1,8 +1,8 @@
 package org.yatopiamc.c2me.mixin.threading.worldgen;
 
-import net.minecraft.structure.Structure;
-import net.minecraft.structure.StructureManager;
-import net.minecraft.util.Identifier;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.gen.feature.template.Template;
+import net.minecraft.world.gen.feature.template.TemplateManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -14,17 +14,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mixin(StructureManager.class)
+@Mixin(TemplateManager.class)
 public class MixinStructureManager {
 
     @Mutable
     @Shadow
     @Final
-    private Map<Identifier, Structure> structures;
+    private Map<ResourceLocation, Template> structureRepository;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void onPostInit(CallbackInfo info) {
-        this.structures = new ConcurrentHashMap<>();
+        this.structureRepository = new ConcurrentHashMap<>();
     }
 
 }

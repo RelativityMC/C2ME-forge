@@ -1,8 +1,8 @@
 package org.yatopiamc.c2me.mixin.threading.chunkio;
 
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.ChunkTickScheduler;
+import net.minecraft.world.chunk.ChunkPrimerTickList;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -10,18 +10,18 @@ import org.yatopiamc.c2me.common.util.DeepCloneable;
 
 import java.util.function.Predicate;
 
-@Mixin(ChunkTickScheduler.class)
+@Mixin(ChunkPrimerTickList.class)
 public abstract class MixinChunkTickScheduler<T> implements DeepCloneable {
 
     @Shadow
-    public abstract ListTag toNbt();
+    public abstract ListNBT save();
 
     @Shadow
     @Final
-    private ChunkPos pos;
-    @Shadow @Final protected Predicate<T> shouldExclude;
+    private ChunkPos chunkPos;
+    @Shadow @Final protected Predicate<T> ignore;
 
-    public ChunkTickScheduler<T> deepClone() {
-        return new ChunkTickScheduler<>(shouldExclude, pos, toNbt());
+    public ChunkPrimerTickList<T> deepClone() {
+        return new ChunkPrimerTickList<>(ignore, chunkPos, save());
     }
 }

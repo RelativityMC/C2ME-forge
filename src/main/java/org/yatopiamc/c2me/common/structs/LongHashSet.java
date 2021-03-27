@@ -3,8 +3,8 @@ package org.yatopiamc.c2me.common.structs;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,7 +24,8 @@ public class LongHashSet implements LongSet {
     }
 
     @Override
-    public @NotNull LongIterator iterator() {
+    public @Nonnull
+    LongIterator iterator() {
         final Iterator<Long> iterator = delegate.iterator();
         return new LongIterator() {
             @Override
@@ -44,35 +45,35 @@ public class LongHashSet implements LongSet {
         };
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Object[] toArray() {
         return delegate.toArray();
     }
 
-    @NotNull
+    @Nonnull
     @Override
-    public <T> T[] toArray(@NotNull T[] a) {
+    public <T> T[] toArray(@Nonnull T[] a) {
         return delegate.toArray(a);
     }
 
     @Override
-    public boolean containsAll(@NotNull Collection<?> c) {
+    public boolean containsAll(@Nonnull Collection<?> c) {
         return delegate.containsAll(c);
     }
 
     @Override
-    public boolean addAll(@NotNull Collection<? extends Long> c) {
+    public boolean addAll(@Nonnull Collection<? extends Long> c) {
         return delegate.addAll(c);
     }
 
     @Override
-    public boolean removeAll(@NotNull Collection<?> c) {
+    public boolean removeAll(@Nonnull Collection<?> c) {
         return delegate.removeAll(c);
     }
 
     @Override
-    public boolean retainAll(@NotNull Collection<?> c) {
+    public boolean retainAll(@Nonnull Collection<?> c) {
         return delegate.retainAll(c);
     }
 

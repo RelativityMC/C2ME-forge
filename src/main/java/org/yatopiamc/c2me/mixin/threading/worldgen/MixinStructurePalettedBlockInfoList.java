@@ -1,7 +1,7 @@
 package org.yatopiamc.c2me.mixin.threading.worldgen;
 
 import net.minecraft.block.Block;
-import net.minecraft.structure.Structure;
+import net.minecraft.world.gen.feature.template.Template;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -14,15 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mixin(Structure.PalettedBlockInfoList.class)
+@Mixin(Template.Palette.class)
 public class MixinStructurePalettedBlockInfoList {
 
     @Mutable
-    @Shadow @Final private Map<Block, List<Structure.StructureBlockInfo>> blockToInfos;
+    @Shadow @Final private Map<Block, List<Template.BlockInfo>> cache;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(CallbackInfo info) {
-        this.blockToInfos = new ConcurrentHashMap<>();
+        this.cache = new ConcurrentHashMap<>();
     }
 
 }

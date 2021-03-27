@@ -1,10 +1,10 @@
 package org.yatopiamc.c2me.mixin.chunkscheduling.fix_unload;
 
 import it.unimi.dsi.fastutil.longs.LongSet;
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.server.world.ThreadedAnvilChunkStorage;
-import net.minecraft.util.thread.ThreadExecutor;
-import net.minecraft.world.poi.PointOfInterestStorage;
+import net.minecraft.util.concurrent.ThreadTaskExecutor;
+import net.minecraft.village.PointOfInterestManager;
+import net.minecraft.world.server.ChunkHolder;
+import net.minecraft.world.server.ChunkManager;
 import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,15 +20,15 @@ import org.yatopiamc.c2me.common.util.ShouldKeepTickingUtils;
 
 import java.util.function.BooleanSupplier;
 
-@Mixin(ThreadedAnvilChunkStorage.class)
+@Mixin(ChunkManager.class)
 public abstract class MixinThreadedAnvilChunkStorage {
 
-    @Shadow @Final private ThreadExecutor<Runnable> mainThreadExecutor;
+    @Shadow @Final private ThreadTaskExecutor<Runnable> mainThreadExecutor;
 
-    @Shadow protected abstract void unloadChunks(BooleanSupplier shouldKeepTicking);
+    @Shadow protected abstract void processUnloads(BooleanSupplier shouldKeepTicking);
 
     @Mutable
-    @Shadow @Final private LongSet unloadedChunks;
+    @Shadow @Final private LongSet toDrop;
 
     /**
      * @author ishland
@@ -37,23 +37,23 @@ public abstract class MixinThreadedAnvilChunkStorage {
     @SuppressWarnings("OverwriteTarget")
     @Dynamic
     @Overwrite
-    private void method_20579(ChunkHolder holder, Runnable runnable) { // TODO synthetic method in thenApplyAsync call of makeChunkAccessible
+    private void lambda$unpackTicks$38(ChunkHolder holder, Runnable runnable) { // TODO synthetic method in thenApplyAsync call of makeChunkAccessible
         this.mainThreadExecutor.execute(runnable);
     }
 
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/poi/PointOfInterestStorage;tick(Ljava/util/function/BooleanSupplier;)V"))
-    private void redirectTickPointOfInterestStorageTick(PointOfInterestStorage pointOfInterestStorage, BooleanSupplier shouldKeepTicking) {
+    @Redirect(method = "tick(Ljava/util/function/BooleanSupplier;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/village/PointOfInterestManager;tick(Ljava/util/function/BooleanSupplier;)V"))
+    private void redirectTickPointOfInterestStorageTick(PointOfInterestManager pointOfInterestStorage, BooleanSupplier shouldKeepTicking) {
         pointOfInterestStorage.tick(ShouldKeepTickingUtils.minimumTicks(shouldKeepTicking, 32));
     }
 
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ThreadedAnvilChunkStorage;unloadChunks(Ljava/util/function/BooleanSupplier;)V"))
-    private void redirectTickUnloadChunks(ThreadedAnvilChunkStorage threadedAnvilChunkStorage, BooleanSupplier shouldKeepTicking) {
-        this.unloadChunks(ShouldKeepTickingUtils.minimumTicks(shouldKeepTicking, 32));
+    @Redirect(method = "tick(Ljava/util/function/BooleanSupplier;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ChunkManager;processUnloads(Ljava/util/function/BooleanSupplier;)V"))
+    private void redirectTickUnloadChunks(ChunkManager threadedAnvilChunkStorage, BooleanSupplier shouldKeepTicking) {
+        this.processUnloads(ShouldKeepTickingUtils.minimumTicks(shouldKeepTicking, 32));
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(CallbackInfo info) {
-        this.unloadedChunks = new LongHashSet();
+        this.toDrop = new LongHashSet();
     }
 
 }
