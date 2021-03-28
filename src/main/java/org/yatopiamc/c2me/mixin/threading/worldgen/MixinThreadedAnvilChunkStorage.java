@@ -16,7 +16,7 @@ public class MixinThreadedAnvilChunkStorage {
      */
     @SuppressWarnings("OverwriteTarget")
     @Dynamic
-    @Overwrite
+    @Overwrite(aliases = "func_219216_e_")
     private void lambda$scheduleChunkGeneration$21(ChunkHolder chunkHolder, Runnable runnable) { // synthetic method for worldGenExecutor scheduling
         GlobalExecutors.scheduler.execute(runnable);
     }

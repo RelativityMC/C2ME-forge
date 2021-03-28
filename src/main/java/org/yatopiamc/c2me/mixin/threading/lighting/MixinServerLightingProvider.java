@@ -14,7 +14,7 @@ public abstract class MixinServerLightingProvider {
     @Shadow public abstract void tryScheduleUpdate();
 
     @Dynamic
-    @Inject(method = "lambda$tryScheduleUpdate$22", at = @At("RETURN"))
+    @Inject(method = {"lambda$tryScheduleUpdate$22", "func_223124_c"}, at = @At("RETURN"))
     private void onPostRunTask(CallbackInfo info) {
         this.tryScheduleUpdate(); // Run more tasks
     }

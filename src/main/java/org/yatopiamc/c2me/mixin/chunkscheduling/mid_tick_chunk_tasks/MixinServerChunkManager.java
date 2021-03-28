@@ -14,10 +14,11 @@ import org.yatopiamc.c2me.common.chunkscheduling.ServerMidTickTask;
 @Mixin(ServerChunkProvider.class)
 public class MixinServerChunkManager {
 
-    @Shadow @Final private ServerWorld level;
+    @Shadow @Final
+    public ServerWorld level;
 
     @Dynamic
-    @Inject(method = "lambda$tickChunks$5", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ServerWorld;tickChunk(Lnet/minecraft/world/chunk/Chunk;I)V"))
+    @Inject(method = {"lambda$tickChunks$5", "func_241099_a_"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ServerWorld;tickChunk(Lnet/minecraft/world/chunk/Chunk;I)V"))
     private void onPostTickChunk(CallbackInfo ci) { // TODO synthetic method - in tickChunks()
         ((ServerMidTickTask) this.level.getServer()).executeTasksMidTick();
     }

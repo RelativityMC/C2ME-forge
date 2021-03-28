@@ -36,7 +36,7 @@ public abstract class MixinThreadedAnvilChunkStorage {
      */
     @SuppressWarnings("OverwriteTarget")
     @Dynamic
-    @Overwrite
+    @Overwrite(aliases = "func_222962_a_")
     private void lambda$unpackTicks$38(ChunkHolder holder, Runnable runnable) { // TODO synthetic method in thenApplyAsync call of makeChunkAccessible
         this.mainThreadExecutor.execute(runnable);
     }

@@ -188,7 +188,7 @@ public abstract class MixinThreadedAnvilChunkStorage extends ChunkLoader impleme
     private ConcurrentLinkedQueue<CompletableFuture<Void>> saveFutures = new ConcurrentLinkedQueue<>();
 
     @Dynamic
-    @Redirect(method = "lambda$scheduleUnload$10", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ChunkManager;save(Lnet/minecraft/world/chunk/IChunk;)Z")) // method: consumer in tryUnloadChunk
+    @Redirect(method = {"lambda$scheduleUnload$10", "func_219185_a"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ChunkManager;save(Lnet/minecraft/world/chunk/IChunk;)Z")) // method: consumer in tryUnloadChunk
     private boolean asyncSave(ChunkManager tacs, IChunk p_219229_1_) {
         // TODO [VanillaCopy] - check when updating minecraft version
         this.poiManager.flush(p_219229_1_.getPos());
