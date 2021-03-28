@@ -133,7 +133,7 @@ public class Metrics {
             builder.appendField("onlineMode", 0);
         }
         builder.appendField("bukkitVersion", FMLLoader.getLauncherInfo() + " (MC: " + MinecraftVersion.BUILT_IN.getReleaseTarget() + ")");
-        builder.appendField("bukkitName", "fabric");
+        builder.appendField("bukkitName", "forge");
         builder.appendField("javaVersion", System.getProperty("java.version"));
         builder.appendField("osName", System.getProperty("os.name"));
         builder.appendField("osArch", System.getProperty("os.arch"));
