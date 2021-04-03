@@ -5,10 +5,6 @@
   "compatibilityLevel": "JAVA_11",
   "mixins": [
     "chunkscheduling.fix_unload.MixinThreadedAnvilChunkStorage",
-    "chunkscheduling.mid_tick_chunk_tasks.MixinMinecraftServer",
-    "chunkscheduling.mid_tick_chunk_tasks.MixinServerChunkManager",
-    "chunkscheduling.mid_tick_chunk_tasks.MixinServerTickScheduler",
-    "chunkscheduling.mid_tick_chunk_tasks.MixinWorld",
     "optimizations.thread_local_biome_sampler.MixinOverworldBiomeProvider",
     "threading.chunkio.MixinChunkSerializer",
     "threading.chunkio.MixinChunkTickScheduler",
@@ -27,8 +23,6 @@
     "threading.worldgen.MixinThreadedAnvilChunkStorage",
     "threading.worldgen.MixinWeightedBlockStateProvider",
     "util.accessor.IThreadTaskExecutor",
-    "util.log4j2shutdownhookisnomore.MixinMain",
-    "util.log4j2shutdownhookisnomore.MixinMinecraftDedicatedServer",
     "util.progresslogger.MixinWorldGenerationProgressLogger"
   ],
   "client": [
