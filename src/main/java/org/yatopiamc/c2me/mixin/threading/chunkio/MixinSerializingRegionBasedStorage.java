@@ -4,17 +4,12 @@ import com.mojang.serialization.DynamicOps;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTDynamicOps;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.storage.IOWorker;
 import net.minecraft.world.chunk.storage.RegionSectionCache;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import org.yatopiamc.c2me.common.threading.chunkio.C2MECachedRegionStorage;
 import org.yatopiamc.c2me.common.threading.chunkio.ISerializingRegionBasedStorage;
 
 import javax.annotation.Nullable;
-import java.io.File;
 
 @Mixin(RegionSectionCache.class)
 public abstract class MixinSerializingRegionBasedStorage implements ISerializingRegionBasedStorage {
@@ -26,8 +21,4 @@ public abstract class MixinSerializingRegionBasedStorage implements ISerializing
         this.readColumn(pos, NBTDynamicOps.INSTANCE, tag);
     }
 
-    @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/world/chunk/storage/IOWorker"))
-    private IOWorker onStorageIoInit(File file, boolean bl, String string) {
-        return new C2MECachedRegionStorage(file, bl, string);
-    }
 }

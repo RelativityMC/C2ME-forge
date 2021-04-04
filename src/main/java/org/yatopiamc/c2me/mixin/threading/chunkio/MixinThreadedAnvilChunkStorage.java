@@ -33,6 +33,7 @@ import org.yatopiamc.c2me.common.threading.chunkio.AsyncSerializationManager;
 import org.yatopiamc.c2me.common.threading.chunkio.C2MECachedRegionStorage;
 import org.yatopiamc.c2me.common.threading.chunkio.ChunkIoMainThreadTaskUtils;
 import org.yatopiamc.c2me.common.threading.chunkio.ChunkIoThreadingExecutorUtils;
+import org.yatopiamc.c2me.common.threading.chunkio.IAsyncChunkStorage;
 import org.yatopiamc.c2me.common.threading.chunkio.ISerializingRegionBasedStorage;
 import org.yatopiamc.c2me.common.util.SneakyThrow;
 
@@ -104,7 +105,7 @@ public abstract class MixinThreadedAnvilChunkStorage extends ChunkLoader impleme
             scheduledChunks.add(pos);
         }
 
-        final CompletableFuture<CompoundNBT> poiData = ((C2MECachedRegionStorage) this.poiManager.worker).getNbtAtAsync(pos);
+        final CompletableFuture<CompoundNBT> poiData = ((IAsyncChunkStorage) this.poiManager.worker).getNbtAtAsync(pos);
 
         final CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> future = getUpdatedChunkTagAtAsync(pos).thenApplyAsync(compoundTag -> {
             if (compoundTag != null) {
@@ -173,7 +174,7 @@ public abstract class MixinThreadedAnvilChunkStorage extends ChunkLoader impleme
     }
 
     private CompletableFuture<CompoundNBT> getUpdatedChunkTagAtAsync(ChunkPos pos) {
-        return chunkLock.acquireLock(pos).toCompletableFuture().thenCompose(lockToken -> ((C2MECachedRegionStorage) this.worker).getNbtAtAsync(pos).thenApply(compoundTag -> {
+        return chunkLock.acquireLock(pos).toCompletableFuture().thenCompose(lockToken -> ((IAsyncChunkStorage) this.worker).getNbtAtAsync(pos).thenApply(compoundTag -> {
             if (compoundTag != null)
                 return this.upgradeChunkTag(this.level.dimension(), this.overworldDataStorage, compoundTag);
             else return null;

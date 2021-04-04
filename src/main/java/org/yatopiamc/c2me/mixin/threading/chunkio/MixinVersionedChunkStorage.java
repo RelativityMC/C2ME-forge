@@ -34,11 +34,6 @@ public abstract class MixinVersionedChunkStorage {
     @Shadow @Nullable
     private LegacyStructureDataUtil legacyStructureHandler;
 
-    @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/world/chunk/storage/IOWorker"))
-    private IOWorker onStorageIoInit(File file, boolean bl, String string) {
-        return new C2MECachedRegionStorage(file, bl, string);
-    }
-
     private AsyncLock featureUpdaterLock = AsyncLock.createFair();
 
     @Inject(method = "<init>", at = @At("RETURN"))
