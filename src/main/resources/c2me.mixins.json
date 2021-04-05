@@ -22,7 +22,9 @@
     "threading.worldgen.MixinStructurePalettedBlockInfoList",
     "threading.worldgen.MixinThreadedAnvilChunkStorage",
     "threading.worldgen.MixinWeightedBlockStateProvider",
+    "util.accessor.IServerChunkProvider",
     "util.accessor.IThreadTaskExecutor",
+    "util.chunkgenerator.MixinCommandGenerate",
     "util.progresslogger.MixinWorldGenerationProgressLogger"
   ],
   "client": [
