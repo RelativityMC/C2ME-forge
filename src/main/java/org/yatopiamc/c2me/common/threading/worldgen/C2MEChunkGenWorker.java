@@ -21,8 +21,7 @@ public class C2MEChunkGenWorker extends ChunkGenWorker {
 
     private static final TicketType<Unit> C2ME_CHUNK_GEN = TicketType.create("c2me_chunk_gen", (o1, o2) -> 0);
 
-    private static final int MAX_WORKING = 1024;
-    private static final int SUBMIT_PER_TICK = 64;
+    private static final int MAX_WORKING = 2048;
 
     private final CommandSource listener;
     private final ServerWorld world;
@@ -32,8 +31,9 @@ public class C2MEChunkGenWorker extends ChunkGenWorker {
     private int genned = 0;
     private int gennedLastSecond = 0;
     private long lastNotification = 0;
-    private int[] gennedSecond = new int[8];
+    private final int[] gennedSecond = new int[8];
     private int gennedSecondLocation = 0;
+    private long lastPollTask = System.nanoTime();
 
     public C2MEChunkGenWorker(CommandSource listener, BlockPos start, int total, ServerWorld dim, int interval) {
         super(listener, start, total, dim, interval);
@@ -64,7 +64,11 @@ public class C2MEChunkGenWorker extends ChunkGenWorker {
     @Override
     public boolean doWork() {
         final long timeMillis = System.currentTimeMillis();
-        world.getChunkSource().pollTask();
+        final long timeNanos = System.nanoTime();
+        if (timeNanos - lastPollTask > 10_000) {
+            world.getChunkSource().pollTask();
+            lastPollTask = timeNanos;
+        }
         if (timeMillis - lastNotification > 1000) {
             gennedSecond[(gennedSecondLocation ++ % gennedSecond.length)] = gennedLastSecond;
             listener.sendSuccess(new StringTextComponent(String.format("Running generation task for %s: %d / %d (%.1f%%) at %.1f (%d) cps",
