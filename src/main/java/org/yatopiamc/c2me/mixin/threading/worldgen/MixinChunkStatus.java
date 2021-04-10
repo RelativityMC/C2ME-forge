@@ -1,7 +1,6 @@
 package org.yatopiamc.c2me.mixin.threading.worldgen;
 
 import com.mojang.datafixers.util.Either;
-import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.IChunk;
 import net.minecraft.world.gen.ChunkGenerator;
@@ -29,6 +28,8 @@ public class MixinChunkStatus {
 
     @Shadow @Final public static ChunkStatus FEATURES;
 
+    @Shadow @Final private int range;
+
     /**
      * @author ishland
      * @reason take over generation
@@ -37,7 +38,7 @@ public class MixinChunkStatus {
     public CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> generate(ServerWorld world, ChunkGenerator chunkGenerator, TemplateManager structureManager, ServerWorldLightManager lightingProvider, Function<IChunk, CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>>> function, List<IChunk> chunks) {
         final IChunk targetChunk = chunks.get(chunks.size() / 2);
         //noinspection ConstantConditions
-        return ChunkStatusUtils.runChunkGenWithLock(targetChunk.getPos(), (Object) this == FEATURES ? 1 : 0, ((IWorldGenLockable) world).getWorldGenChunkLock(), () ->
+        return ChunkStatusUtils.runChunkGenWithLock(targetChunk.getPos(), this.range, ((IWorldGenLockable) world).getWorldGenChunkLock(), () ->
                 ChunkStatusUtils.getThreadingType((ChunkStatus) (Object) this).runTask(((IWorldGenLockable) world).getWorldGenSingleThreadedLock(), () ->
                         this.generationTask.doWork((ChunkStatus) (Object) this, world, chunkGenerator, structureManager, lightingProvider, function, chunks, targetChunk)
                 )
