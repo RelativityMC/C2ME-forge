@@ -15,6 +15,7 @@ public class C2MEMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
+        //noinspection ResultOfMethodCallIgnored
         C2MEConfig.threadedWorldGenConfig.getClass().getName(); // Load configuration
         LOGGER.info("Successfully loaded configuration for C2ME");
     }
@@ -28,6 +29,8 @@ public class C2MEMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.startsWith("org.yatopiamc.c2me.mixin.threading.worldgen."))
             return C2MEConfig.threadedWorldGenConfig.enabled;
+        if (mixinClassName.startsWith("org.yatopiamc.c2me.mixin.threading.chunkio."))
+            return C2MEConfig.asyncIoConfig.enabled;
         return true;
     }
 

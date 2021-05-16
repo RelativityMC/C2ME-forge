@@ -21,8 +21,12 @@ version = project.mod_version
 group = project.maven_group // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "${project.archives_base_name}-mc${project.minecraft_version}"
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+sourceCompatibility = JavaVersion.VERSION_15
+targetCompatibility = JavaVersion.VERSION_15
+
+tasks.withType(JavaCompile).each {
+    it.options.compilerArgs.add('--enable-preview')
+}
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
@@ -134,10 +138,8 @@ dependencies {
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
 
-    // You may put jars on which you depend on in ./libs or you may define them like so..
-    // compile "some.group:artifact:version:classifier"
-    // compile "some.group:artifact:version"
-    compile "com.ibm.async:asyncutil:0.1.0"
+    implementation "com.ibm.async:asyncutil:${async_util_version}"
+    implementation "com.electronwill.night-config:toml:${night_config_version}"
 
     // Real examples
     // compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
@@ -187,7 +189,9 @@ jar {
 
 shadowJar {
     dependencies {
-        include(dependency("com.ibm.async:asyncutil:0.1.0"))
+        include(dependency("com.ibm.async:asyncutil:${async_util_version}"))
+        include(dependency("com.electronwill.night-config:toml:${night_config_version}"))
+        include(dependency("com.electronwill.night-config:core:${night_config_version}"))
     }
     finalizedBy('reobfJar')
 }

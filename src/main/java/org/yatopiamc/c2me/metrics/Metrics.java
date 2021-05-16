@@ -132,6 +132,7 @@ public class Metrics {
             LOGGER.warn("Unknown environment, assuming offline mode");
             builder.appendField("onlineMode", 0);
         }
+        //noinspection OptionalGetWithoutIsPresent
         builder.appendField("bukkitVersion", FMLLoader.getLauncherInfo() + " (MC: " + MinecraftVersion.BUILT_IN.getReleaseTarget() + ")");
         builder.appendField("bukkitName", "forge");
         builder.appendField("javaVersion", System.getProperty("java.version"));
@@ -142,6 +143,7 @@ public class Metrics {
     }
 
     private void appendServiceData(JsonObjectBuilder builder) {
+        //noinspection OptionalGetWithoutIsPresent
         builder.appendField("pluginVersion", Metrics.class.getPackage().getImplementationVersion());
     }
 
@@ -849,13 +851,7 @@ public class Metrics {
          * allow a raw string inputs for methods like {@link JsonObjectBuilder#appendField(String,
          * JsonObject)}.
          */
-        public static class JsonObject {
-
-            private final String value;
-
-            private JsonObject(String value) {
-                this.value = value;
-            }
+        public record JsonObject(String value) {
 
             @Override
             public String toString() {

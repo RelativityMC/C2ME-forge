@@ -33,5 +33,6 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "refmap": "c2me.refmap.json"
+  "refmap": "c2me.refmap.json",
+  "setSourceFile": true
 }

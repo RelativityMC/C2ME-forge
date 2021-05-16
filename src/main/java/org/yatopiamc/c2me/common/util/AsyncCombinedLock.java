@@ -1,15 +1,14 @@
 package org.yatopiamc.c2me.common.util;
 
 import com.ibm.asyncutil.locks.AsyncLock;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import org.yatopiamc.c2me.common.threading.GlobalExecutors;
+import com.ibm.asyncutil.locks.AsyncNamedLock;
+import net.minecraft.util.math.ChunkPos;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class AsyncCombinedLock {
 
@@ -20,34 +19,52 @@ public class AsyncCombinedLock {
             true
     );
 
-    private final Set<AsyncLock> lockHandles;
+    private final AsyncNamedLock<ChunkPos> lock;
+    private final ChunkPos[] names;
     private final CompletableFuture<AsyncLock.LockToken> future = new CompletableFuture<>();
 
-    public AsyncCombinedLock(Set<AsyncLock> lockHandles) {
-        this.lockHandles = Set.copyOf(lockHandles);
+    public AsyncCombinedLock(AsyncNamedLock<ChunkPos> lock, Set<ChunkPos> names) {
+        this.lock = lock;
+        this.names = names.toArray(ChunkPos[]::new);
         lockWorker.execute(this::tryAcquire);
     }
 
-    private synchronized void tryAcquire() { // TODO optimize logic
-        final Set<LockEntry> tryLocks = new ObjectOpenHashSet<>(lockHandles.size());
+    private synchronized void tryAcquire() { // TODO optimize logic further
+        final LockEntry[] tryLocks = new LockEntry[names.length];
         boolean allAcquired = true;
-        for (AsyncLock lockHandle : lockHandles) {
-            final LockEntry entry = new LockEntry(lockHandle, lockHandle.tryLock());
-            tryLocks.add(entry);
+        for (int i = 0, namesLength = names.length; i < namesLength; i++) {
+            ChunkPos name = names[i];
+            final LockEntry entry = new LockEntry(name, this.lock.tryLock(name));
+            tryLocks[i] = entry;
             if (entry.lockToken.isEmpty()) {
                 allAcquired = false;
                 break;
             }
         }
         if (allAcquired) {
-            future.complete(new CombinedLockToken(tryLocks.stream().flatMap(lockEntry -> lockEntry.lockToken.stream()).collect(Collectors.toUnmodifiableSet())));
+            future.complete(() -> {
+                for (LockEntry entry : tryLocks) {
+                    //noinspection OptionalGetWithoutIsPresent
+                    entry.lockToken.get().releaseLock(); // if it isn't present then something is really wrong
+                }
+            });
         } else {
-            tryLocks.stream().flatMap(lockEntry -> lockEntry.lockToken.stream()).forEach(AsyncLock.LockToken::releaseLock);
-            tryLocks.stream().unordered().filter(lockEntry -> lockEntry.lockToken.isEmpty()).findFirst().ifPresentOrElse(lockEntry ->
-                    lockEntry.lock.acquireLock().thenCompose(lockToken -> {
+            boolean triedRelock = false;
+            for (LockEntry entry : tryLocks) {
+                if (entry == null) continue;
+                entry.lockToken.ifPresent(AsyncLock.LockToken::releaseLock);
+                if (!triedRelock && entry.lockToken.isEmpty()) {
+                    this.lock.acquireLock(entry.name).thenCompose(lockToken -> {
                         lockToken.releaseLock();
                         return CompletableFuture.runAsync(this::tryAcquire, lockWorker);
-                    }), this::tryAcquire);
+                    });
+                    triedRelock = true;
+                }
+            }
+            if (!triedRelock) {
+                // shouldn't happen at all...
+                lockWorker.execute(this::tryAcquire);
+            }
         }
     }
 
@@ -55,33 +72,7 @@ public class AsyncCombinedLock {
         return future.thenApply(Function.identity());
     }
 
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private static class LockEntry {
-        public final AsyncLock lock;
-        public final Optional<AsyncLock.LockToken> lockToken;
-
-        private LockEntry(AsyncLock lock, Optional<AsyncLock.LockToken> lockToken) {
-            this.lock = lock;
-            this.lockToken = lockToken;
-        }
-    }
-
-    private static class CombinedLockToken implements AsyncLock.LockToken {
-
-        private final Set<AsyncLock.LockToken> delegates;
-
-        private CombinedLockToken(Set<AsyncLock.LockToken> delegates) {
-            this.delegates = Set.copyOf(delegates);
-        }
-
-        @Override
-        public void releaseLock() {
-            delegates.forEach(AsyncLock.LockToken::releaseLock);
-        }
-
-        @Override
-        public void close() {
-            this.releaseLock();
-        }
+    private record LockEntry(ChunkPos name,
+                             Optional<AsyncLock.LockToken> lockToken) {
     }
 }
