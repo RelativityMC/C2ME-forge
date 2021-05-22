@@ -136,6 +136,7 @@ dependencies {
 
     implementation "com.ibm.async:asyncutil:${async_util_version}"
     implementation "com.electronwill.night-config:toml:${night_config_version}"
+    implementation "org.threadly:threadly:${threadly_version}"
 
     // Real examples
     // compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
@@ -188,6 +189,7 @@ shadowJar {
         include(dependency("com.ibm.async:asyncutil:${async_util_version}"))
         include(dependency("com.electronwill.night-config:toml:${night_config_version}"))
         include(dependency("com.electronwill.night-config:core:${night_config_version}"))
+        include(dependency("org.threadly:threadly:${threadly_version}"))
     }
     finalizedBy('reobfJar')
 }
