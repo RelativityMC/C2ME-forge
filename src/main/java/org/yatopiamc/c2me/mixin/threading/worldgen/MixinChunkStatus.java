@@ -54,7 +54,7 @@ public abstract class MixinChunkStatus implements IChunkStatus {
         if ((Object) this == ChunkStatus.LIGHT) {
             this.reducedTaskRadius = 1;
         }
-        System.out.printf("%s task radius: %d -> %d%n", this, this.range, this.reducedTaskRadius);
+        System.out.println(String.format("%s task radius: %d -> %d", this, this.range, this.reducedTaskRadius));
     }
 
     @Dynamic

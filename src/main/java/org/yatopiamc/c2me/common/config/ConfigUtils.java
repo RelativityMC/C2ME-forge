@@ -3,6 +3,7 @@ package org.yatopiamc.c2me.common.config;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
@@ -13,7 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ConfigUtils {
@@ -28,7 +28,7 @@ public class ConfigUtils {
         Preconditions.checkNotNull(deff);
         Preconditions.checkNotNull(incompatibleMods);
         final Set<ModInfo> foundIncompatibleMods = IGNORE_INCOMPATIBILITY ? Collections.emptySet() : FMLLoader.getLoadingModList().getMods().stream().filter(modInfo -> incompatibleMods.contains(modInfo.getModId())).collect(Collectors.toSet());
-        Supplier<T> def = Suppliers.memoize(deff::get);
+        Supplier<T> def = Suppliers.memoize(deff);
         if (!foundIncompatibleMods.isEmpty()) {
             comment = comment + " \n INCOMPATIBILITY: Set to " + incompatibleDefault + " forcefully by: " + String.join(", ", foundIncompatibleMods.stream().map(ModInfo::getModId).collect(Collectors.toSet()));
 

@@ -65,20 +65,19 @@ public class AsyncSerializationManager {
         public final Map<BlockPos, TileEntity> blockEntities;
         private final AtomicBoolean isOpen = new AtomicBoolean(false);
 
-        @SuppressWarnings("unchecked")
         public Scope(IChunk chunk, ServerWorld world) {
             this.pos = chunk.getPos();
             this.lighting = Arrays.stream(LightType.values()).map(type -> new CachedLightingView(world.getLightEngine(), chunk.getPos(), type)).collect(Collectors.toMap(CachedLightingView::getLightType, Function.identity()));
             final ITickList<Block> blockTickScheduler = chunk.getBlockTicks();
-            if (blockTickScheduler instanceof DeepCloneable cloneable) {
-                this.blockTickScheduler = (ITickList<Block>) cloneable.deepClone();
+            if (blockTickScheduler instanceof DeepCloneable) {
+                this.blockTickScheduler = (ITickList<Block>) ((DeepCloneable) blockTickScheduler).deepClone();
             } else {
                 final ServerTickList<Block> worldBlockTickScheduler = world.getBlockTicks();
                 this.blockTickScheduler = new SerializableTickList<>(Registry.BLOCK::getKey, worldBlockTickScheduler.fetchTicksInChunk(chunk.getPos(), false, true), world.getGameTime());
             }
             final ITickList<Fluid> fluidTickScheduler = chunk.getLiquidTicks();
-            if (fluidTickScheduler instanceof DeepCloneable cloneable) {
-                this.fluidTickScheduler = (ITickList<Fluid>) cloneable.deepClone();
+            if (fluidTickScheduler instanceof DeepCloneable) {
+                this.fluidTickScheduler = (ITickList<Fluid>) ((DeepCloneable) fluidTickScheduler).deepClone();
             } else {
                 final ServerTickList<Fluid> worldFluidTickScheduler = world.getLiquidTicks();
                 this.fluidTickScheduler = new SerializableTickList<>(Registry.FLUID::getKey, worldFluidTickScheduler.fetchTicksInChunk(chunk.getPos(), false, true), world.getGameTime());

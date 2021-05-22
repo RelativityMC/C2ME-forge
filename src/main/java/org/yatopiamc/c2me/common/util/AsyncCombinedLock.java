@@ -1,7 +1,9 @@
 package org.yatopiamc.c2me.common.util;
 
+import com.google.common.collect.Sets;
 import com.ibm.asyncutil.locks.AsyncLock;
 import com.ibm.asyncutil.locks.AsyncNamedLock;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.util.math.ChunkPos;
 
 import java.util.Optional;
@@ -9,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class AsyncCombinedLock {
 
@@ -72,7 +75,14 @@ public class AsyncCombinedLock {
         return future.thenApply(Function.identity());
     }
 
-    private record LockEntry(ChunkPos name,
-                             Optional<AsyncLock.LockToken> lockToken) {
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static class LockEntry {
+        public final ChunkPos name;
+        public final Optional<AsyncLock.LockToken> lockToken;
+
+        private LockEntry(ChunkPos name, Optional<AsyncLock.LockToken> lockToken) {
+            this.name = name;
+            this.lockToken = lockToken;
+        }
     }
 }
