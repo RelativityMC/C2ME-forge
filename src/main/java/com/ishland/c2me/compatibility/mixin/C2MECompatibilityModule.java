@@ -1,4 +1,5 @@
 package com.ishland.c2me.compatibility.mixin;
+/*
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.google.gson.Gson;
@@ -234,3 +235,5 @@ public class C2MECompatibilityModule implements IMixinConfigPlugin {
     }
 
 }
+
+ */

@@ -1,6 +1,6 @@
 allprojects {
     apply plugin: 'com.ishland.curseforge.modpackresolver'
-    apply plugin: 'fabric-loom'
+    apply plugin: 'dev.architectury.loom'
     apply plugin: 'io.github.juuxel.loom-quiltflower'
     apply plugin: 'java-library'
 
@@ -26,7 +26,7 @@ allprojects {
         }
     }
     loom {
-        shareRemapCaches = true
+//        shareRemapCaches = true
     }
     afterEvaluate {
         migrateMappings.configure {
@@ -39,7 +39,7 @@ allprojects {
     dependencies {
         minecraft "com.mojang:minecraft:${project.minecraft_version}"
         mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-        modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+        forge "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
         modApi 'com.github.astei:lazydfu:0.1.2'
         modApi 'com.github.ishland:Starlight:08d63f4095'
         implementation "com.ibm.async:asyncutil:${async_util_version}"

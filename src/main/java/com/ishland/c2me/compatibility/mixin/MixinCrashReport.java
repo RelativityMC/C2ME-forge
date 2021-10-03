@@ -1,4 +1,5 @@
 package com.ishland.c2me.compatibility.mixin;
+/*
 
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.util.crash.CrashReport;
@@ -29,3 +30,5 @@ public class MixinCrashReport {
     }
 
 }
+
+ */

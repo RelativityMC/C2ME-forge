@@ -1,12 +1,12 @@
 subprojects {
-    apply plugin: 'fabric-loom'
+    apply plugin: 'dev.architectury.loom'
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
 
     archivesBaseName = "c2me-compat-" + project.getName()
 
     loom {
-        shareRemapCaches = true
+//        shareRemapCaches = true
     }
     afterEvaluate {
         migrateMappings.configure {
@@ -18,7 +18,7 @@ subprojects {
         //to change the versions see the gradle.properties file
         minecraft "com.mojang:minecraft:${project.minecraft_version}"
         mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-        modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+        forge "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
         implementation project(":")
     }
 
